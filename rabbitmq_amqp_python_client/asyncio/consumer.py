@@ -3,22 +3,13 @@ from __future__ import annotations
 import asyncio
 import logging
 import threading
-import warnings
 from types import TracebackType
-from typing import (
-    Any,
-    Callable,
-    Literal,
-    Optional,
-    Type,
-    Union,
-)
+from typing import Any, Callable, Optional, Type
 
 from ..amqp_consumer_handler import AMQPMessagingHandler
 from ..consumer import Consumer
 from ..entities import AbcConsumerOptions
 from ..qpid.proton._exceptions import Timeout
-from ..qpid.proton._message import Message
 from ..qpid.proton.utils import BlockingConnection
 
 logger = logging.getLogger(__name__)
@@ -38,7 +29,7 @@ class AsyncConsumer:
     Attributes:
         _consumer (Optional[Consumer]): The underlying synchronous Consumer
         _conn (BlockingConnection): The shared blocking connection
-        _addr (str): The address to consume from
+        _addr (Optional[str]): The address to consume from
         _handler (Optional[AMQPMessagingHandler]): Optional message handling callback
         _stream_options (Optional[AbcConsumerOptions]): Configuration for stream consumption
         _credit (Optional[int]): Flow control credit value
@@ -55,7 +46,7 @@ class AsyncConsumer:
     def __init__(
         self,
         conn: BlockingConnection,
-        addr: str,
+        addr: Optional[str] = None,
         handler: Optional[AMQPMessagingHandler] = None,
         stream_options: Optional[AbcConsumerOptions] = None,
         credit: Optional[int] = None,
@@ -68,7 +59,7 @@ class AsyncConsumer:
 
         Args:
             conn (BlockingConnection): The blocking connection to use
-            addr (str): The address to consume from
+            addr (Optional[str]): The address to consume from; ``None`` for Direct Reply-To
             handler (Optional[AMQPMessagingHandler]): Optional message handler for processing received messages
             stream_options (Optional[AbcConsumerOptions]): Optional configuration for stream-based consumption
             credit (Optional[int]): Optional credit value for flow control
@@ -118,46 +109,6 @@ class AsyncConsumer:
         self._opened = True
         self._stop_event.clear()
         logger.debug(f"AsyncConsumer opened for address: {self._addr}")
-
-    async def consume(
-        self, timeout: Union[None, Literal[False], float] = False
-    ) -> Message:
-        """
-        Consume a message from the queue.
-
-        .. deprecated::
-            Use the ``message_handler`` parameter when creating the consumer via
-            :meth:`AsyncConnection.consumer` instead. The message handler processes
-            messages as they arrive without polling.
-
-        Args:
-            timeout: The time to wait for a message.
-                    None: Defaults to 60s
-                    float: Wait for specified number of seconds
-
-        Returns:
-            Message: The received message
-
-        Raises:
-            RuntimeError: If consumer is not opened
-
-        Note:
-            The return type might be None if no message is available and timeout occurs,
-            but this is handled by the cast to Message.
-        """
-        warnings.warn(
-            "consume() is deprecated; pass message_handler when creating the consumer "
-            "via connection.consumer() instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        if not self._opened or self._consumer is None:
-            raise RuntimeError(
-                "Consumer is not opened. Call open() or use async context manager."
-            )
-
-        async with self._connection_lock:
-            return await asyncio.to_thread(self._consumer.consume, timeout)
 
     async def close(self) -> None:
         """
@@ -336,8 +287,10 @@ class AsyncConsumer:
         await self.close()
 
     @property
-    def address(self) -> str:
-        """Get the current consumer address."""
+    def address(self) -> Optional[str]:
+        """Get the current consumer address (from the link when the receiver is open)."""
+        if self._opened and self._consumer is not None:
+            return self._consumer.address
         return self._addr
 
     @property

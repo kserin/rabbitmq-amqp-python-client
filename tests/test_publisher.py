@@ -2,6 +2,7 @@ import time
 
 from rabbitmq_amqp_python_client import (
     AddressHelper,
+    AMQPMessagingHandler,
     ArgumentOutOfRangeException,
     Connection,
     ConnectionClosed,
@@ -13,8 +14,10 @@ from rabbitmq_amqp_python_client import (
     StreamSpecification,
     ValidationCodeException,
 )
+from rabbitmq_amqp_python_client.qpid.proton import Event
 from rabbitmq_amqp_python_client.utils import Converter
 
+from .conftest import ConsumerTestException
 from .http_requests import delete_all_connections
 from .utils import create_binding, publish_per_message
 
@@ -448,28 +451,45 @@ def test_multiple_publishers(environment: Environment) -> None:
     management.close()
 
 
-def test_durable_message(connection: Connection) -> None:
-    queue_name = "test_durable_message"
+class MyMessageHandlerDurable(AMQPMessagingHandler):
 
+    def __init__(self):
+        super().__init__(auto_settle=False)
+        self.message = None
+
+    def on_message(self, event: Event):
+        self.message = event.message
+        self.delivery_context.accept(event)
+        raise ConsumerTestException("consumed")
+
+    def message(self):
+        return self.message
+
+
+def test_publish_default_message_is_consumed_with_durable_flag(
+    connection: Connection,
+) -> None:
+    queue_name = "test-default-message-durable-consume"
     management = connection.management()
     management.declare_queue(QuorumQueueSpecification(name=queue_name))
-    destination = AddressHelper.queue_address(queue_name)
-    publisher = connection.publisher(destination)
-    # message should be durable by default
-    status = publisher.publish(
-        Message(
-            body=Converter.string_to_bytes("durable"),
-        )
+
+    publisher = connection.publisher(AddressHelper.queue_address(queue_name))
+    status = publisher.publish(Message(b"default-durable-message"))
+
+    msg_handler = MyMessageHandlerDurable()
+
+    consumer = connection.consumer(
+        AddressHelper.queue_address(queue_name), message_handler=msg_handler
     )
 
-    assert status.remote_state == OutcomeState.ACCEPTED
-    # message should be not durable by setting the durable to False by the user
+    try:
+        consumer.run()
+    except ConsumerTestException:
+        pass
 
-    assert status.remote_state == OutcomeState.ACCEPTED
-
-    consumer = connection.consumer(destination)
-    should_be_durable = consumer.consume()
-    assert should_be_durable.durable is True
-    consumer.close()
-    management.purge_queue(queue_name)
+    publisher.close()
     management.delete_queue(queue_name)
+    management.close()
+
+    assert status.remote_state == OutcomeState.ACCEPTED
+    assert msg_handler.message.durable is True
