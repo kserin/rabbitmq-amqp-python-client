@@ -5,15 +5,22 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+
+## [[0.7.0](https://github.com/rabbitmq/rabbitmq-amqp-python-client/releases/tag/v0.7.0)]
+
+## 0.7.0 - 2026-05-18
+- [Release 0.7.0](https://github.com/rabbitmq/rabbitmq-amqp-python-client/releases/tag/v0.7.0)
+
 ### Added
-- Raise `AmqpMessageRejectedException` when a published message is rejected by the broker. The exception message contains the rejection reason provided by the broker (queue name and specific reason). This requires RabbitMQ 4.3+ to include detailed rejection information; older versions will raise the exception with a generic message.
-- Add `QuorumConsumerOptions` with `sac_state_handler` callback for Quorum Queue Single Active Consumer (SAC) state-change notifications via AMQP 1.0 FLOW `rabbitmq:active` link-state property (RabbitMQ 4.3+). The callback receives `True` when the consumer becomes active and `False` when it is placed in standby.
+- Raise `AmqpMessageRejectedException` when a published message is rejected by the broker. The exception message contains the rejection reason provided by the broker (queue name and specific reason). This requires RabbitMQ 4.3+ to include detailed rejection information; older versions will raise the exception with a generic message. [#108](https://github.com/rabbitmq/rabbitmq-amqp-python-client/pull/108)
+- Add `QuorumConsumerOptions` with `sac_state_handler` callback for Quorum Queue Single Active Consumer (SAC) state-change notifications via AMQP 1.0 FLOW `rabbitmq:active` link-state property (RabbitMQ 4.3+). The callback receives `True` when the consumer becomes active and `False` when it is placed in standby. [#109](https://github.com/rabbitmq/rabbitmq-amqp-python-client/pull/109)
 
 ### Changed
-- Refresh declared dependency ranges (including dev tools) to current releases.
+- Refresh declared dependency ranges (including dev tools) to current releases and fix stream consumer race condition by @Gsantomaggio in [#106](https://github.com/rabbitmq/rabbitmq-amqp-python-client/pull/106)
+- Bump pyjwt from 2.10.1 to 2.12.0 by @dependabot in [#105](https://github.com/rabbitmq/rabbitmq-amqp-python-client/pull/105)
 
 ### Removed
-- Remove `consume()` API from `Consumer` and `AsyncConsumer` in [#96](https://github.com/rabbitmq/rabbitmq-amqp-python-client/issues/96). Use `message_handler` parameter with `connection.consumer()` instead.
+- Remove `consume()` API from `Consumer` and `AsyncConsumer` by @Gsantomaggio in [#104](https://github.com/rabbitmq/rabbitmq-amqp-python-client/pull/104). Use `message_handler` parameter with `connection.consumer()` instead.
 
 
 ## [[0.6.0](https://github.com/rabbitmq/rabbitmq-amqp-python-client/releases/tag/v0.6.0)]
