@@ -43,6 +43,8 @@ class Environment:
         ] = None,
         oauth2_options: Optional[OAuth2Options] = None,
         recovery_configuration: RecoveryConfiguration = RecoveryConfiguration(),
+        username: Optional[str] = None,
+        password: Optional[str] = None,
     ):
         """
         Initialize a new Environment instance.
@@ -54,6 +56,8 @@ class Environment:
             uris: List of URIs for multi-node setup
             ssl_context: SSL configuration for secure connections
             on_disconnection_handler: Callback for handling disconnection events
+            username: username for authentication
+            password: password for authentication
 
         """
         if uri is not None and uris is not None:
@@ -68,6 +72,8 @@ class Environment:
         self._recovery_configuration = recovery_configuration
         self._connections: list[Connection] = []
         self._oauth2_options = oauth2_options
+        self._username = username
+        self._password = password
 
     def connection(
         self,
@@ -94,6 +100,8 @@ class Environment:
             ssl_context=self._ssl_context,
             oauth2_options=self._oauth2_options,
             recovery_configuration=self._recovery_configuration,
+            username=self._username,
+            password=self._password,
         )
         logger.debug("Environment: Creating and returning a new connection")
         self._connections.append(connection)

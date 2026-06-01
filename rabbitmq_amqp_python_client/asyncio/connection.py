@@ -57,6 +57,8 @@ class AsyncConnection:
         ] = None,
         oauth2_options: Optional[OAuth2Options] = None,
         recovery_configuration: RecoveryConfiguration = RecoveryConfiguration(),
+        username: Optional[str] = None,
+        password: Optional[str] = None,
     ):
         """
         Initialize AsyncConnection.
@@ -67,6 +69,8 @@ class AsyncConnection:
             ssl_context: Optional SSL/TLS configuration
             oauth2_options: Optional OAuth2 configuration
             recovery_configuration: Configuration for automatic recovery
+            username: username for authentication
+            password: password for authentication
 
         Raises:
             ValidationCodeException: If recovery configuration is invalid
@@ -77,6 +81,8 @@ class AsyncConnection:
             ssl_context=ssl_context,
             oauth2_options=oauth2_options,
             recovery_configuration=recovery_configuration,
+            username=username,
+            password=password,
         )
         self._connection_lock = asyncio.Lock()
         self._async_publishers: list[AsyncPublisher] = []

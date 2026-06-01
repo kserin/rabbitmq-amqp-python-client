@@ -272,3 +272,29 @@ def test_connection_vhost_not_exists() -> None:
         exception = True
 
     assert exception is True
+
+
+def test_connection_username_password() -> None:
+    environment = Environment(
+        uri="amqp://localhost:5672/",
+        username="guest",
+        password="guest",
+    )
+    connection = environment.connection()
+    connection.dial()
+    management = connection.management()
+    management.declare_queue(QuorumQueueSpecification(name="test-queue-user-pass"))
+    management.delete_queue("test-queue-user-pass")
+    management.close()
+    environment.close()
+
+
+def test_connection_username_password_wrong_credentials() -> None:
+    environment = Environment(
+        uri="amqp://localhost:5672/",
+        username="guest",
+        password="wrongpassword",
+    )
+    connection = environment.connection()
+    with pytest.raises(ConnectionException):
+        connection.dial()

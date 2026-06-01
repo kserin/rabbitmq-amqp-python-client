@@ -70,6 +70,8 @@ class Connection:
         ] = None,
         oauth2_options: Optional[OAuth2Options] = None,
         recovery_configuration: RecoveryConfiguration = RecoveryConfiguration(),
+        username: Optional[str] = None,
+        password: Optional[str] = None,
     ):
         """
          Initialize a new Connection instance.
@@ -79,6 +81,8 @@ class Connection:
              uris: List of URIs for multi-node setup
              ssl_context: SSL configuration for secure connections
              reconnect: Ability to automatically reconnect in case of disconnections from the server
+             username: username for authentication
+             password: password for authentication
 
         Raises:
              ValueError: If neither uri nor uris is provided
@@ -103,6 +107,8 @@ class Connection:
         self._publishers: list[Publisher] = []
         self._consumers: list[Consumer] = []
         self._oauth2_options = oauth2_options
+        self._explicit_username: Optional[str] = username
+        self._explicit_password: Optional[str] = password
 
         # Some recovery_configuration validation
         if recovery_configuration.back_off_reconnect_interval < timedelta(seconds=1):
@@ -147,6 +153,11 @@ class Connection:
             self._user = "no"
             self._password = self._oauth2_options.token
             self._mechs = "PLAIN"
+        elif (
+            self._explicit_username is not None and self._explicit_password is not None
+        ):
+            self._user = self._explicit_username
+            self._password = self._explicit_password
 
         if self._recovery_configuration.active_recovery is False:
             self._conn = BlockingConnection(

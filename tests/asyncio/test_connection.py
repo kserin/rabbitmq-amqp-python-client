@@ -260,3 +260,33 @@ async def test_async_connection_vhost_not_exists() -> None:
     with pytest.raises(ConnectionException):
         connection = await environment.connection()
         await connection.dial()
+
+
+@pytest.mark.asyncio
+async def test_async_connection_username_password() -> None:
+    environment = AsyncEnvironment(
+        uri="amqp://localhost:5672/",
+        username="guest",
+        password="guest",
+    )
+    connection = await environment.connection()
+    await connection.dial()
+    management = await connection.management()
+    await management.declare_queue(
+        QuorumQueueSpecification(name="test-queue-user-pass")
+    )
+    await management.delete_queue("test-queue-user-pass")
+    await management.close()
+    await environment.close()
+
+
+@pytest.mark.asyncio
+async def test_async_connection_username_password_wrong_credentials() -> None:
+    environment = AsyncEnvironment(
+        uri="amqp://localhost:5672/",
+        username="guest",
+        password="wrongpassword",
+    )
+    connection = await environment.connection()
+    with pytest.raises(ConnectionException):
+        await connection.dial()

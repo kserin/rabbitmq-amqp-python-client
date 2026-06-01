@@ -43,6 +43,8 @@ class AsyncEnvironment:
         ] = None,
         oauth2_options: Optional[OAuth2Options] = None,
         recovery_configuration: RecoveryConfiguration = RecoveryConfiguration(),
+        username: Optional[str] = None,
+        password: Optional[str] = None,
     ):
         """
         Initialize AsyncEnvironment.
@@ -53,6 +55,8 @@ class AsyncEnvironment:
             ssl_context: SSL configuration for secure connections
             oauth2_options: OAuth2 options for authentication
             recovery_configuration: Configuration for connection recovery
+            username: username for authentication
+            password: password for authentication
 
         Raises:
             ValueError: If both 'uri' and 'uris' are specified or if neither is specified.
@@ -69,6 +73,8 @@ class AsyncEnvironment:
         self._ssl_context = ssl_context
         self._oauth2_options = oauth2_options
         self._recovery_configuration = recovery_configuration
+        self._username = username
+        self._password = password
         self._connections: list[AsyncConnection] = []
         self._connections_lock = asyncio.Lock()
 
@@ -97,6 +103,8 @@ class AsyncEnvironment:
                 ssl_context=self._ssl_context,
                 oauth2_options=self._oauth2_options,
                 recovery_configuration=self._recovery_configuration,
+                username=self._username,
+                password=self._password,
             )
             logger.debug("AsyncEnvironment: Creating new async connection")
             self._connections.append(connection)
